@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DemoBase.h"
+#include "ShadowMap.h"
 
 class DemoApp :
 	public DemoBase
@@ -45,6 +46,9 @@ private:
 	ID3D11ShaderResourceView * m_pTextureSRV;
 	ID3D11SamplerState * m_pSampleLinear;
 	ID3D11ShaderResourceView * m_pNormalMapSRV;
+
+	ShadowMap *m_pShadowMap;
+	static const int  mShadowMapSize = 2048;
 
 	XMMATRIX m_World;
 	XMMATRIX m_View;

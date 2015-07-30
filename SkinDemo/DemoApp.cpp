@@ -43,7 +43,8 @@ m_pSampleLinear(0),
 numVertex(0), 
 mTheta(-0.5f*MathHelper::Pi), 
 mPhi(0.5f*MathHelper::Pi), 
-mRadius(40.0f)
+mRadius(40.0f),
+m_pShadowMap(0)
 {
 	this->mMainWndCaption = L"Demo";
 	mLastMousePos.x = 0;
@@ -52,6 +53,12 @@ mRadius(40.0f)
 
 DemoApp::~DemoApp()
 {
+	if (m_pShadowMap)
+	{
+		delete m_pShadowMap;
+		m_pShadowMap = 0;
+	}
+
 	md3dImmediateContext->ClearState();
 	ReleaseCOM(m_pVertexBuffer);
 	ReleaseCOM(m_pIndexBuffer);
@@ -209,6 +216,8 @@ bool DemoApp::Init()
 {
 	if (!DemoBase::Init())
 		return false;
+
+	m_pShadowMap = new ShadowMap(md3dDevice, mShadowMapSize, mShadowMapSize);
 	CreateShaders();
 	BuidGeometry();
 	CreateContantBuffers();

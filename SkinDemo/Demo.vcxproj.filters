@@ -10,8 +10,11 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{d062181b-01ed-41ea-9249-aa955f8c281f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Render">
+    <Filter Include="PiplelineEntities">
       <UniqueIdentifier>{3647400a-8f3f-488d-becd-448893bc6786}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects">
+      <UniqueIdentifier>{3f7abc47-f054-4f14-9347-d650f77fdd45}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -31,13 +34,16 @@
       <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="Vertex.h">
-      <Filter>Render</Filter>
+      <Filter>PiplelineEntities</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">
-      <Filter>Render</Filter>
+      <Filter>PiplelineEntities</Filter>
     </ClInclude>
     <ClInclude Include="RenderStates.h">
-      <Filter>Render</Filter>
+      <Filter>PiplelineEntities</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMap.h">
+      <Filter>Effects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -57,13 +63,16 @@
       <Filter>Application</Filter>
     </ClCompile>
     <ClCompile Include="RenderStates.cpp">
-      <Filter>Render</Filter>
+      <Filter>PiplelineEntities</Filter>
     </ClCompile>
     <ClCompile Include="Vertex.cpp">
-      <Filter>Render</Filter>
+      <Filter>PiplelineEntities</Filter>
     </ClCompile>
     <ClCompile Include="Entry.cpp">
       <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowMap.cpp">
+      <Filter>Effects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

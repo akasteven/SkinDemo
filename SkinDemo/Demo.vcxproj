@@ -18,6 +18,7 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="MathUtility.h" />
     <ClInclude Include="RenderStates.h" />
+    <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>
@@ -28,6 +29,7 @@
     <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="MathUtility.cpp" />
     <ClCompile Include="RenderStates.cpp" />
+    <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="Vertex.cpp" />
   </ItemGroup>
   <ItemGroup>
