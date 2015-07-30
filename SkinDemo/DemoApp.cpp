@@ -225,14 +225,13 @@ void DemoApp::UpdateScene(float dt)
 	float z = mRadius*sinf(mPhi)*sinf(mTheta);
 	float y = mRadius*cosf(mPhi);
 
-	//Updata Per Frame Constant Buffer
+	//Update Per Frame Constant Buffer
 	CBPerFrame cbPerFrame;
 	cbPerFrame.eyePos = XMFLOAT3(x, y, z);
 	md3dImmediateContext->UpdateSubresource(m_pCBPerFrame, 0, NULL, &cbPerFrame, 0, 0);
 
 	float t = mTimer.TotalTime();
 	XMMATRIX rot = XMMatrixRotationY(t * 0.3);
-	//XMMATRIX trans = XMMatrixTranslation(0.0f, 0.0f, 10.0f);
 	m_World = rot;
 
 	XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
@@ -260,6 +259,7 @@ void DemoApp::DrawScene()
 
 	md3dImmediateContext->IASetInputLayout(InputLayouts::VertexPNTTan);
 	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	md3dImmediateContext->RSSetState(RenderStates::CullClockwiseRS);
 
 	//Update Per Object Constant Buffer
 	CBPerObject cbPerObj;
@@ -288,7 +288,7 @@ void DemoApp::DrawScene()
 	md3dImmediateContext->PSSetShaderResources(1, 1, &m_pNormalMapSRV);
 	md3dImmediateContext->PSSetSamplers(0, 1, &m_pSampleLinear);
 
-	md3dImmediateContext->RSSetState(RenderStates::CullClockwiseRS);
+
 	md3dImmediateContext->Draw(numVertex, 0);
 	//md3dImmediateContext->DrawIndexed(numTriangle*3,0,0);
 	HR(mSwapChain->Present(0, 0));
