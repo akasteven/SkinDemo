@@ -3,6 +3,13 @@
 #include "DemoBase.h"
 #include "ShadowMap.h"
 
+struct BoundingSphere
+{
+	BoundingSphere() :center(0.0f, 0.0f, 0.0f), radius(0.0f){}
+	XMFLOAT3 center;
+	float radius;
+};
+
 class DemoApp :
 	public DemoBase
 {
@@ -21,12 +28,17 @@ public:
 
 private:
 
-	void BuidGeometry();
+	//Common setups
+	void CreateGeometry();
 	void CreateShaders();
 	void CreateContantBuffers();
 	void CreateRenderStates();
 	void CreateSamplerStates();
 	void SetUpMatrices();
+
+	//Shadow Map
+	void RenderShadowMap();
+
 
 private:
 
@@ -48,12 +60,11 @@ private:
 	ID3D11ShaderResourceView * m_pNormalMapSRV;
 
 	ShadowMap *m_pShadowMap;
-	static const int  mShadowMapSize = 2048;
+	int  mShadowMapSize = 4096;
 
 	XMMATRIX m_World;
 	XMMATRIX m_View;
 	XMMATRIX m_Proj;
-
 
 	POINT mLastMousePos;
 	float mTheta;

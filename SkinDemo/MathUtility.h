@@ -52,6 +52,16 @@ public:
 	// Returns the polar angle of the point (x,y) in [0, 2*PI).
 	static float AngleFromXY(float x, float y);
 
+	static XMFLOAT3 VectorMax(XMFLOAT3 &v1, XMFLOAT3 &v2)
+	{
+		return XMFLOAT3(max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z));
+	}
+
+	static XMFLOAT3 VectorMin(XMFLOAT3 &v1, XMFLOAT3 &v2)
+	{
+		return XMFLOAT3(min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z));
+	}
+
 	static XMMATRIX InverseTranspose(CXMMATRIX M)
 	{
 		// Inverse-transpose is just applied to normals.  So zero out 

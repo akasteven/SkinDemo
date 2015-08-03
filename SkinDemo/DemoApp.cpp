@@ -44,7 +44,8 @@ numVertex(0),
 mTheta(-0.5f*MathHelper::Pi), 
 mPhi(0.5f*MathHelper::Pi), 
 mRadius(40.0f),
-m_pShadowMap(0)
+m_pShadowMap(0),
+mShadowMapSize(4096)
 {
 	this->mMainWndCaption = L"Demo";
 	mLastMousePos.x = 0;
@@ -143,7 +144,7 @@ void DemoApp::CreateShaders()
 	ReleaseCOM(pPSBlob);
 }
 
-void DemoApp::BuidGeometry()
+void DemoApp::CreateGeometry()
 {
 	LoadModel("..//Resources//Perry.objx", &m_pVertexBuffer, &m_pIndexBuffer, md3dDevice, numVertex, numTriangle);
 }
@@ -219,7 +220,7 @@ bool DemoApp::Init()
 
 	m_pShadowMap = new ShadowMap(md3dDevice, mShadowMapSize, mShadowMapSize);
 	CreateShaders();
-	BuidGeometry();
+	CreateGeometry();
 	CreateContantBuffers();
 	CreateSamplerStates();
 	SetUpMatrices();
@@ -296,7 +297,6 @@ void DemoApp::DrawScene()
 	md3dImmediateContext->PSSetShaderResources(0, 1, &m_pTextureSRV);
 	md3dImmediateContext->PSSetShaderResources(1, 1, &m_pNormalMapSRV);
 	md3dImmediateContext->PSSetSamplers(0, 1, &m_pSampleLinear);
-
 
 	md3dImmediateContext->Draw(numVertex, 0);
 	//md3dImmediateContext->DrawIndexed(numTriangle*3,0,0);
