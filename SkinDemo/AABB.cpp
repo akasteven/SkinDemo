@@ -5,7 +5,6 @@ AABB::~AABB()
 {
 }
 
-
 void AABB::BuildFromVertices(Vertex::VertexBase * vertex, int numVer)
 {
 	Clear();
@@ -18,7 +17,6 @@ void AABB::BuildFromVertices(Vertex::VertexBase * vertex, int numVer)
 		Mins = MathHelper::VectorMin(Maxs, vertex[i].Pos);
 	}
 }
-
 
 void AABB::AddVertex(const Vertex::VertexBase & vertex)
 {

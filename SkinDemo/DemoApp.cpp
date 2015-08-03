@@ -137,6 +137,21 @@ void DemoApp::OnMouseMove(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 }
 
+void DemoApp::CreateLights()
+{
+	mDirLight.Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	mDirLight.Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mDirLight.Specular = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	mDirLight.Direction = XMFLOAT3(1.0f, 0.0f, 1.0f);
+
+	mPointLight.Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	mPointLight.Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mPointLight.Specular = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	mPointLight.Position = XMFLOAT3(80.0f, 0.0f, -80.0f);
+	mPointLight.Range = 500.0f;
+	mPointLight.Att = XMFLOAT3(1.0f, 0.2f, 0.0f);
+}
+
 void DemoApp::CreateShaders()
 {
 	ID3DBlob *pVSBlob = NULL;
@@ -196,21 +211,12 @@ void DemoApp::CreateSamplerStates()
 	HR(md3dDevice->CreateSamplerState(&desc, &m_pSampleLinear))
 }
 
-void DemoApp::SetUpMatrices()
+void DemoApp::SetUpSceneConsts()
 {
 	//Set Invariant Constant Buffer
 	CBNeverChanges cbNeverChanges;
-	cbNeverChanges.dirLight.Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-	cbNeverChanges.dirLight.Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	cbNeverChanges.dirLight.Specular = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-	cbNeverChanges.dirLight.Direction = XMFLOAT3(1.0f, 0.0f, 1.0f);
-
-	cbNeverChanges.pointLight.Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-	cbNeverChanges.pointLight.Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	cbNeverChanges.pointLight.Specular = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-	cbNeverChanges.pointLight.Position = XMFLOAT3(80.0f, 0.0f, -80.0f);
-	cbNeverChanges.pointLight.Range = 500.0f;
-	cbNeverChanges.pointLight.Att = XMFLOAT3(1.0f, 0.2f, 0.0f);
+	cbNeverChanges.dirLight = mDirLight;
+	cbNeverChanges.pointLight = mPointLight;
 
 	md3dImmediateContext->UpdateSubresource(m_pCBNeverChanges, 0, NULL, &cbNeverChanges, 0, 0);
 
@@ -222,6 +228,40 @@ void DemoApp::CreateRenderStates()
 	RenderStates::InitAll(md3dDevice);
 }
 
+void DemoApp::BuildShadowMapMatrices()
+{
+	float aabbRadius = m_pAABB->GetRadius();
+	XMVECTOR lightDir = XMLoadFloat3(&mDirLight.Direction);
+	XMVECTOR lightPos = -2.0f * lightDir * aabbRadius;
+	XMVECTOR targetPos = XMLoadFloat3(&m_pAABB->Center);
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	XMMATRIX V = XMMatrixLookAtLH(lightPos, targetPos, up);
+
+	// Transform bounding sphere to light space.
+	XMFLOAT3 aabbCenterLightSpace;
+	XMStoreFloat3(&aabbCenterLightSpace, XMVector3TransformCoord(targetPos, V));
+
+	//// Ortho frustum in light space encloses scene.
+	float l = aabbCenterLightSpace.x - aabbRadius;
+	float b = aabbCenterLightSpace.y - aabbRadius;
+	float n = aabbCenterLightSpace.z - aabbRadius;
+	float r = aabbCenterLightSpace.x + aabbRadius;
+	float t = aabbCenterLightSpace.y + aabbRadius;
+	float f = aabbCenterLightSpace.z + aabbRadius;
+	XMMATRIX P = XMMatrixOrthographicOffCenterLH(l, r, b, t, n, f);
+
+	// Transform NDC space [-1,+1]^2 to texture space [0,1]^2
+	XMMATRIX T(
+		0.5f, 0.0f, 0.0f, 0.0f,
+		0.0f, -0.5f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.0f, 1.0f);
+
+	XMMATRIX S = V*P*T;
+}
+
+
 bool DemoApp::Init()
 {
 	if (!DemoBase::Init())
@@ -229,12 +269,13 @@ bool DemoApp::Init()
 
 	m_pShadowMap = new ShadowMap(md3dDevice, mShadowMapSize, mShadowMapSize);
 	m_pAABB = new AABB();
+	CreateLights();
 	CreateShaders();
 	CreateGeometry();
 	CreateContantBuffers();
 	CreateSamplerStates();
-	SetUpMatrices();
 	CreateRenderStates();
+	SetUpSceneConsts();
 
 	return true;
 }

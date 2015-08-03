@@ -18,6 +18,7 @@ public:
 	void AddVertex(const Vertex::VertexBase & vertex);
 	void ComputeCenterExt();
 	void ComputeMinMax();
+	float GetRadius(){ return sqrtf( Extents.x * Extents.x + Extents.y * Extents.y + Extents.z * Extents.z ); }
 
 public:
 

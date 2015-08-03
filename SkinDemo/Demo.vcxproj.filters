@@ -51,6 +51,9 @@
     <ClInclude Include="AABB.h">
       <Filter>Geometries</Filter>
     </ClInclude>
+    <ClInclude Include="BoundingSphere.h">
+      <Filter>Geometries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameTimer.cpp">
@@ -81,6 +84,9 @@
       <Filter>Effects</Filter>
     </ClCompile>
     <ClCompile Include="AABB.cpp">
+      <Filter>Geometries</Filter>
+    </ClCompile>
+    <ClCompile Include="BoundingSphere.cpp">
       <Filter>Geometries</Filter>
     </ClCompile>
   </ItemGroup>

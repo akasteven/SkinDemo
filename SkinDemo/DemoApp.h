@@ -29,11 +29,12 @@ private:
 	void CreateContantBuffers();
 	void CreateRenderStates();
 	void CreateSamplerStates();
-	void SetUpMatrices();
+	void SetUpSceneConsts();
+	void CreateLights();
 
 	//Shadow Map
 	void RenderShadowMap();
-
+	void BuildShadowMapMatrices();
 
 private:
 
@@ -56,6 +57,9 @@ private:
 
 	ShadowMap *m_pShadowMap;
 	int  mShadowMapSize = 4096;
+	XMFLOAT4X4 mLightVPT;
+	XMFLOAT4X4 mLightView;
+	XMFLOAT4X4 mLightProj;
 
 	XMMATRIX m_World;
 	XMMATRIX m_View;
@@ -65,6 +69,9 @@ private:
 	float mTheta;
 	float mPhi;
 	float mRadius;
+
+	DirectionalLight mDirLight;
+	PointLight mPointLight;
 
 	AABB *m_pAABB;
 };

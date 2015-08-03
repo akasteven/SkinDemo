@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h" />
+    <ClInclude Include="BoundingSphere.h" />
     <ClInclude Include="D3DUtil.h" />
     <ClInclude Include="DemoApp.h" />
     <ClInclude Include="DemoBase.h" />
@@ -24,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AABB.cpp" />
+    <ClCompile Include="BoundingSphere.cpp" />
     <ClCompile Include="D3DUtil.cpp" />
     <ClCompile Include="DemoApp.cpp" />
     <ClCompile Include="DemoBase.cpp" />
