@@ -27,6 +27,8 @@
 #include "Vertex.h"
 #include <cassert>
 
+class AABB;
+
 //---------------------------------------------------------------------------------------
 // Simple d3d error checker for book demos.
 //---------------------------------------------------------------------------------------
@@ -82,6 +84,7 @@ bool LoadModel(
 	ID3D11Buffer** vertBuff,
 	ID3D11Buffer** indexBuff,
 	ID3D11Device *device,
+	AABB * aabb,
 	UINT & verCnt ,
 	UINT &triCnt
 	);

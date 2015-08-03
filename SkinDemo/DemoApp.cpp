@@ -1,6 +1,8 @@
 #include "DemoApp.h"
 #include "Vertex.h"
 #include "RenderStates.h"
+#include "ShadowMap.h"
+#include "AABB.h"
 
 struct CBNeverChanges
 {
@@ -45,7 +47,8 @@ mTheta(-0.5f*MathHelper::Pi),
 mPhi(0.5f*MathHelper::Pi), 
 mRadius(40.0f),
 m_pShadowMap(0),
-mShadowMapSize(4096)
+mShadowMapSize(4096),
+m_pAABB(0)
 {
 	this->mMainWndCaption = L"Demo";
 	mLastMousePos.x = 0;
@@ -58,6 +61,12 @@ DemoApp::~DemoApp()
 	{
 		delete m_pShadowMap;
 		m_pShadowMap = 0;
+	}
+
+	if (m_pAABB)
+	{
+		delete m_pAABB;
+		m_pAABB = 0;
 	}
 
 	md3dImmediateContext->ClearState();
@@ -146,7 +155,7 @@ void DemoApp::CreateShaders()
 
 void DemoApp::CreateGeometry()
 {
-	LoadModel("..//Resources//Perry.objx", &m_pVertexBuffer, &m_pIndexBuffer, md3dDevice, numVertex, numTriangle);
+	LoadModel("..//Resources//Perry.objx", &m_pVertexBuffer, &m_pIndexBuffer, md3dDevice, m_pAABB, numVertex, numTriangle);
 }
 
 void DemoApp::CreateContantBuffers()
@@ -219,6 +228,7 @@ bool DemoApp::Init()
 		return false;
 
 	m_pShadowMap = new ShadowMap(md3dDevice, mShadowMapSize, mShadowMapSize);
+	m_pAABB = new AABB();
 	CreateShaders();
 	CreateGeometry();
 	CreateContantBuffers();

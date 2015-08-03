@@ -1,4 +1,5 @@
 #include "D3DUtil.h"
+#include "AABB.h"
 
 HRESULT CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
 {
@@ -589,6 +590,7 @@ bool LoadModel(
 	ID3D11Buffer** vertBuff,
 	ID3D11Buffer** indexBuff,
 	ID3D11Device *device,
+	AABB * aabb,
 	UINT & verCnt,
 	UINT & triCnt)
 {
@@ -604,9 +606,10 @@ bool LoadModel(
 	{
 		Vertex::VertexPNTTan v;
 		fscanf(file, "%f %f %f %f %f %f %f %f %f %f %f\n", &v.Pos.x, &v.Pos.y, &v.Pos.z, &v.Normal.x, &v.Normal.y, &v.Normal.z, &v.Tex.x, &v.Tex.y, &v.Tan.x, &v.Tan.y, &v.Tan.z);
+		aabb->AddVertex(v);
 		vVertex[i] = v;
 	}
-
+	aabb->ComputeCenterExt();
 
 	fscanf(file, "%ld\n", &triCnt);
 	vIndex.resize(triCnt * 3);

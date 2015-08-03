@@ -1,14 +1,9 @@
 #pragma once
 
 #include "DemoBase.h"
-#include "ShadowMap.h"
 
-struct BoundingSphere
-{
-	BoundingSphere() :center(0.0f, 0.0f, 0.0f), radius(0.0f){}
-	XMFLOAT3 center;
-	float radius;
-};
+class ShadowMap;
+class AABB;
 
 class DemoApp :
 	public DemoBase
@@ -70,5 +65,7 @@ private:
 	float mTheta;
 	float mPhi;
 	float mRadius;
+
+	AABB *m_pAABB;
 };
 
