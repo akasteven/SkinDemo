@@ -1,6 +1,6 @@
 # SkinDemo
 
-+ This is a simple skin rendering demo for algorithm practices. More visual effects will by added gradually.
++ This is a simple skin rendering demo for algorithm practices. More visual effects will be added gradually.
 
 + Development languange and tools
   + Programming Language: C++
