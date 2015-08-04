@@ -8,6 +8,8 @@ ID3D11RasterizerState* RenderStates::WireframeRS     = 0;
 ID3D11RasterizerState* RenderStates::NoCullRS        = 0;
 ID3D11RasterizerState* RenderStates::CullClockwiseRS = 0;
 ID3D11RasterizerState* RenderStates::CullCounterClockwiseRS = 0;
+ID3D11RasterizerState* RenderStates::ShadowMapDepthRS = 0;
+
 
 ID3D11BlendState*      RenderStates::AlphaToCoverageBS      = 0;
 ID3D11BlendState*      RenderStates::TransparentBS          = 0;
@@ -67,6 +69,19 @@ void RenderStates::InitAll(ID3D11Device* device)
 	cullCounterClockwiseDesc.DepthClipEnable = true;
 
 	HR(device->CreateRasterizerState(&cullCounterClockwiseDesc, &CullCounterClockwiseRS));
+
+	D3D11_RASTERIZER_DESC shadowMapDepthDesc;
+	ZeroMemory(&shadowMapDepthDesc, sizeof(D3D11_RASTERIZER_DESC));
+	shadowMapDepthDesc.FillMode = D3D11_FILL_SOLID;
+	shadowMapDepthDesc.CullMode = D3D11_CULL_BACK;
+	shadowMapDepthDesc.FrontCounterClockwise = true;
+	shadowMapDepthDesc.DepthClipEnable = true;
+	shadowMapDepthDesc.DepthBias = 10000;
+	shadowMapDepthDesc.DepthBiasClamp = 0.0f;
+	shadowMapDepthDesc.SlopeScaledDepthBias = 1.0f;
+
+	HR(device->CreateRasterizerState(&shadowMapDepthDesc, &ShadowMapDepthRS));
+
 
 	//
 	// AlphaToCoverageBS
@@ -199,6 +214,8 @@ void RenderStates::DestroyAll()
 	ReleaseCOM(WireframeRS);
 	ReleaseCOM(NoCullRS);
 	ReleaseCOM(CullClockwiseRS);
+	ReleaseCOM(CullCounterClockwiseRS);
+	ReleaseCOM(ShadowMapDepthRS);
 
 	ReleaseCOM(AlphaToCoverageBS);
 	ReleaseCOM(TransparentBS);

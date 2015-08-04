@@ -40,6 +40,9 @@
     <FxCompile Include="Shaders\DemoShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\ShadowMap.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </FxCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B7136610-BFC1-4EED-8520-84D6FB774C42}</ProjectGuid>
@@ -98,8 +101,11 @@
       <ShaderType>Effect</ShaderType>
     </FxCompile>
     <PreBuildEvent>
-      <Command>fxc /Zi /Od /T vs_5_0 /E VS /Fc Shaders\vs.asm /Fo Shaders\vs.fxo Shaders\DemoShader.hlsl
-fxc /Zi /Od /T ps_5_0 /E PS /Fc Shaders\ps.asm /Fo Shaders\ps.fxo Shaders\DemoShader.hlsl</Command>
+      <Command>fxc /Zi /Od /T vs_5_0 /E VS /Fc Shaders\ShadowVS.asm /Fo Shaders\shadowvs.fxo Shaders\ShadowMap.hlsl
+fxc /Zi /Od /T ps_5_0 /E PS /Fc Shaders\ShadowPS.asm /Fo Shaders\shadowps.fxo Shaders\ShadowMap.hlsl
+fxc /Zi /Od /T vs_5_0 /E VS /Fc Shaders\VS.asm /Fo Shaders\vs.fxo Shaders\DemoShader.hlsl
+fxc /Zi /Od /T ps_5_0 /E PS /Fc Shaders\PS.asm /Fo Shaders\ps.fxo Shaders\DemoShader.hlsl
+</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

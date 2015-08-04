@@ -29,6 +29,12 @@ struct CBPerObject
 	Material material;
 };
 
+struct CBPerObjectShadow
+{
+	XMMATRIX lightWVP;
+};
+
+
 DemoApp::DemoApp(HINSTANCE hInstance)
 :DemoBase(hInstance),
 m_pVertexShader(0),
@@ -37,6 +43,7 @@ m_pCBNeverChanges(0),
 m_pCBOnResize(0),
 m_pCBPerFrame(0),
 m_pCBPerObject(0),
+m_pCBPerObjShadow(0),
 m_pVertexBuffer(0),
 m_pIndexBuffer(0),
 m_pTextureSRV(0),
@@ -76,11 +83,14 @@ DemoApp::~DemoApp()
 	ReleaseCOM(m_pCBOnResize);
 	ReleaseCOM(m_pCBPerFrame);
 	ReleaseCOM(m_pCBPerObject);
+	ReleaseCOM(m_pCBPerObjShadow);
 	ReleaseCOM(m_pTextureSRV);
 	ReleaseCOM(m_pNormalMapSRV);
 	ReleaseCOM(m_pSampleLinear);
 	ReleaseCOM(m_pVertexShader);
 	ReleaseCOM(m_pPixelShader);
+	ReleaseCOM(m_pShadowMapVS);
+	ReleaseCOM(m_pShadowMapPS);
 
 	InputLayouts::DestroyAll();
 	RenderStates::DestroyAll();
@@ -154,18 +164,31 @@ void DemoApp::CreateLights()
 
 void DemoApp::CreateShaders()
 {
+	//Default VS
 	ID3DBlob *pVSBlob = NULL;
-	//HR(CompileShaderFromFile(L"Shaders//DemoShader.hlsl", "VS", "vs_4_0", &pVSBlob));
 	HR(LoadShaderBinaryFromFile("Shaders//vs.fxo", &pVSBlob));
 	HR(md3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader));
 	InputLayouts::InitLayout(md3dDevice, pVSBlob, Vertex::POSNORTEXTAN);
-	ReleaseCOM(pVSBlob);
 
+	//Shadow map VS
+	ID3DBlob *pShadowVSBlob = NULL;
+	HR(LoadShaderBinaryFromFile("Shaders//shadowvs.fxo", &pShadowVSBlob));
+	HR(md3dDevice->CreateVertexShader(pShadowVSBlob->GetBufferPointer(), pShadowVSBlob->GetBufferSize(), NULL, &m_pShadowMapVS));
+
+	//Default PS
 	ID3DBlob *pPSBlob = NULL;
-	//HR(CompileShaderFromFile(L"Shaders//DemoShader.hlsl", "PS", "ps_5_0", &pPSBlob));
 	HR(LoadShaderBinaryFromFile("Shaders//ps.fxo", &pPSBlob));
 	HR(md3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShader));
+
+	//Shadow map PS 
+	ID3DBlob *pShadowPSBlob = NULL;
+	HR(LoadShaderBinaryFromFile("Shaders//shadowps.fxo", &pShadowPSBlob));
+	HR(md3dDevice->CreatePixelShader(pShadowPSBlob->GetBufferPointer(), pShadowPSBlob->GetBufferSize(), NULL, &m_pShadowMapPS));
+
+	ReleaseCOM(pVSBlob);
 	ReleaseCOM(pPSBlob);
+	ReleaseCOM(pShadowVSBlob);
+	ReleaseCOM(pShadowPSBlob);
 }
 
 void DemoApp::CreateGeometry()
@@ -192,6 +215,9 @@ void DemoApp::CreateContantBuffers()
 
 	desc.ByteWidth = sizeof(CBPerObject);
 	HR(md3dDevice->CreateBuffer(&desc, 0, &m_pCBPerObject));
+
+	desc.ByteWidth = sizeof(CBPerObjectShadow);
+	HR(md3dDevice->CreateBuffer(&desc, 0, &m_pCBPerObjShadow));
 }
 
 void DemoApp::CreateSamplerStates()
@@ -221,6 +247,8 @@ void DemoApp::SetUpSceneConsts()
 	md3dImmediateContext->UpdateSubresource(m_pCBNeverChanges, 0, NULL, &cbNeverChanges, 0, 0);
 
 	m_Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, mClientWidth / (float)mClientHeight, 0.01f, 100.0f);
+
+	BuildShadowMapMatrices();
 }
 
 void DemoApp::CreateRenderStates()
@@ -236,11 +264,11 @@ void DemoApp::BuildShadowMapMatrices()
 	XMVECTOR targetPos = XMLoadFloat3(&m_pAABB->Center);
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
-	XMMATRIX V = XMMatrixLookAtLH(lightPos, targetPos, up);
+	mLightView = XMMatrixLookAtLH(lightPos, targetPos, up);
 
 	// Transform bounding sphere to light space.
 	XMFLOAT3 aabbCenterLightSpace;
-	XMStoreFloat3(&aabbCenterLightSpace, XMVector3TransformCoord(targetPos, V));
+	XMStoreFloat3(&aabbCenterLightSpace, XMVector3TransformCoord(targetPos, mLightView));
 
 	//// Ortho frustum in light space encloses scene.
 	float l = aabbCenterLightSpace.x - aabbRadius;
@@ -249,18 +277,43 @@ void DemoApp::BuildShadowMapMatrices()
 	float r = aabbCenterLightSpace.x + aabbRadius;
 	float t = aabbCenterLightSpace.y + aabbRadius;
 	float f = aabbCenterLightSpace.z + aabbRadius;
-	XMMATRIX P = XMMatrixOrthographicOffCenterLH(l, r, b, t, n, f);
+	mLightProj = XMMatrixOrthographicOffCenterLH(l, r, b, t, n, f);
 
 	// Transform NDC space [-1,+1]^2 to texture space [0,1]^2
-	XMMATRIX T(
+	mLightViewport = XMMATRIX(
 		0.5f, 0.0f, 0.0f, 0.0f,
 		0.0f, -0.5f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.5f, 0.5f, 0.0f, 1.0f);
 
-	XMMATRIX S = V*P*T;
+	 mLightVPT = mLightView*mLightProj*mLightViewport;
 }
 
+void DemoApp::RenderShadowMap()
+{
+	//Set Buffers, Layout, Topology and Render States
+	UINT stride = sizeof(Vertex::VertexPNTTan);
+	UINT offset = 0;
+	md3dImmediateContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
+	md3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	md3dImmediateContext->IASetInputLayout(InputLayouts::VertexPNTTan);
+	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	md3dImmediateContext->RSSetState(RenderStates::ShadowMapDepthRS);
+
+	CBPerObjectShadow cbPerObjShadow;
+	cbPerObjShadow.lightWVP = XMMatrixTranspose(m_World * mLightView * mLightProj);
+	md3dImmediateContext->UpdateSubresource(m_pCBPerObjShadow, 0, NULL, &cbPerObjShadow, 0, 0);
+
+	md3dImmediateContext->VSSetShader(m_pShadowMapVS, NULL, 0);
+	md3dImmediateContext->VSSetConstantBuffers(3, 1, &m_pCBPerObjShadow);
+
+	md3dImmediateContext->PSSetShader(m_pShadowMapPS, NULL, 0);
+	md3dImmediateContext->PSSetShaderResources(0, 1, &m_pTextureSRV);
+	md3dImmediateContext->PSSetSamplers(0, 1, &m_pSampleLinear);
+
+	md3dImmediateContext->Draw(numVertex, 0);
+}
 
 bool DemoApp::Init()
 {
@@ -306,6 +359,16 @@ void DemoApp::DrawScene()
 {
 	assert(md3dImmediateContext);
 	assert(mSwapChain);
+
+	//Render shadow map
+	m_pShadowMap->BindShadowMapDSV(md3dImmediateContext);
+	RenderShadowMap();
+
+	//Restore render targets
+	md3dImmediateContext->RSSetState(0);
+	ID3D11RenderTargetView* renderTargets[1] = { mRenderTargetView };
+	md3dImmediateContext->OMSetRenderTargets(1, renderTargets, mDepthStencilView);
+	md3dImmediateContext->RSSetViewports(1, &mScreenViewport);
 
 	//Clear Render Targets
 	float clearColor[4] = { 199.0f / 255.0f, 197.0f / 255.0f, 206.0f / 255.0f, 1.0f };

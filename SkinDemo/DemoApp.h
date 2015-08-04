@@ -40,11 +40,15 @@ private:
 
 	ID3D11VertexShader * m_pVertexShader;
 	ID3D11PixelShader * m_pPixelShader;
+	ID3D11VertexShader * m_pShadowMapVS;
+	ID3D11PixelShader * m_pShadowMapPS;
+
 
 	ID3D11Buffer * m_pCBNeverChanges;
 	ID3D11Buffer * m_pCBOnResize;
 	ID3D11Buffer * m_pCBPerFrame;
 	ID3D11Buffer * m_pCBPerObject;
+	ID3D11Buffer * m_pCBPerObjShadow;
 
 	ID3D11Buffer * m_pVertexBuffer;
 	ID3D11Buffer * m_pIndexBuffer;
@@ -57,9 +61,10 @@ private:
 
 	ShadowMap *m_pShadowMap;
 	int  mShadowMapSize = 4096;
-	XMFLOAT4X4 mLightVPT;
-	XMFLOAT4X4 mLightView;
-	XMFLOAT4X4 mLightProj;
+	XMMATRIX mLightVPT;
+	XMMATRIX mLightView;
+	XMMATRIX mLightProj;
+	XMMATRIX mLightViewport;
 
 	XMMATRIX m_World;
 	XMMATRIX m_View;
