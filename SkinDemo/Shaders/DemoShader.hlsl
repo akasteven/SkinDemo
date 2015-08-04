@@ -3,13 +3,28 @@
 
 Texture2D txDiffuse : register( t0 );
 Texture2D txNormal : register(t1);
+Texture2D txShadowMap : register(t2);
 
 SamplerState samLinear : register( s0 );
+
+SamplerComparisonState samShadow
+{
+	Filter = COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+	AddressU = BORDER;
+	AddressV = BORDER;
+	AddressW = BORDER;
+	BorderColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	ComparisonFunc = LESS_EQUAL;
+};
+
 
 cbuffer cbNeverChanges : register( b0 )
 {
 	DirectionalLight DirLight;
 	PointLight PLight;
+	float ShadowMapSize;
+	float3 pad3;
 };
 
 cbuffer cbChangeOnResize : register( b1 )
@@ -20,6 +35,7 @@ cbuffer cbPerFrame : register( b2 )
 {
 	float3 eyePos;
 	float pad;
+	float4x4 lightVPT;
 };
 
 cbuffer cbPerObject: register( b3 )
@@ -45,6 +61,7 @@ struct PS_INPUT
     float3 NorW : NORMAL ;
 	float3 TangentW : TANGENT;
     float2 Tex : TEXCOORD;
+	float4 ShadowH : TEXCOORD1;
 };
 
 
@@ -63,6 +80,39 @@ float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, floa
 	return bumpedNormalW;
 }
 
+float CalcShadowFactor(SamplerComparisonState samShadow,
+	Texture2D shadowMap,
+	float4 shadowPosH)
+{
+	// Complete projection by doing division by w.
+	shadowPosH.xyz /= shadowPosH.w;
+
+	// Depth in NDC space.
+	float depth = shadowPosH.z;
+
+	// Texel size.
+	const float dx = 1.0f / ShadowMapSize;
+
+	float percentLit = 0.0f;
+	const float2 offsets[9] =
+	{
+		float2(-dx, -dx), float2(0.0f, -dx), float2(dx, -dx),
+		float2(-dx, 0.0f), float2(0.0f, 0.0f), float2(dx, 0.0f),
+		float2(-dx, +dx), float2(0.0f, +dx), float2(dx, +dx)
+	};
+
+	[unroll]
+	for (int i = 0; i < 9; ++i)
+	{
+		percentLit += shadowMap.SampleCmpLevelZero(samShadow,
+			shadowPosH.xy + offsets[i], depth).r;
+	}
+
+	return percentLit = shadowMap.SampleCmpLevelZero(samShadow, shadowPosH.xy , depth).r;
+	//return percentLit /= 9.0f;
+}
+
+
 PS_INPUT VS( VS_INPUT input )
 {
     PS_INPUT output = (PS_INPUT)0;
@@ -72,7 +122,7 @@ PS_INPUT VS( VS_INPUT input )
 	output.TangentW = mul(input.TangentL, (float3x3)matWorld);
 	output.PosH = mul(float4(input.PosL, 1.0f), matWVP);
 	output.Tex = input.Tex; 
-
+	output.ShadowH = mul(float4(output.PosW, 1.0f), lightVPT);
     return output;
 }
 
@@ -87,6 +137,7 @@ float4 PS( PS_INPUT input) : SV_Target
 
 	float3 normalMapSample = txNormal.Sample(samLinear, input.Tex).rgb;
 	float3 bumpedNormal = NormalSampleToWorldSpace(normalMapSample, input.NorW, input.TangentW);
+	float PCF = CalcShadowFactor(samShadow, txShadowMap, input.ShadowH);
 
 	float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -96,18 +147,20 @@ float4 PS( PS_INPUT input) : SV_Target
 	ComputeDirectionalLight(material, DirLight, bumpedNormal, toEye, A, D, S);
 
 	ambient += A;
-	diffuse += D;
-	specular += S;
+	diffuse += D *PCF;
+	specular += S * PCF;
 
 	ComputePointLight(material, PLight, input.PosW, bumpedNormal, toEye, A, D, S);
 
 	ambient += A;
-	diffuse += D;
-	specular += S;
+	diffuse += D ;
+	specular += S ;
 
 	float4 litColor = texColor * (ambient + diffuse) + specular;
 	litColor.a = texColor.a;
 	
+	//return txShadowMap.Sample(samLinear, input.Tex);
+	return float4(PCF, 0.0f, 0.0f, 1.0f);
 	return litColor;
 }
 

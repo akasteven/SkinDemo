@@ -8,6 +8,8 @@ struct CBNeverChanges
 {
 	DirectionalLight dirLight;
 	PointLight pointLight;
+	float shadowMapSize;
+	XMFLOAT3 pad3;
 };
 
 struct CBOnResize
@@ -19,6 +21,7 @@ struct CBPerFrame
 {
 	XMFLOAT3 eyePos;
 	float pad;
+	XMMATRIX matLightVPT;
 };
 
 struct CBPerObject
@@ -34,7 +37,6 @@ struct CBPerObjectShadow
 	XMMATRIX lightWVP;
 };
 
-
 DemoApp::DemoApp(HINSTANCE hInstance)
 :DemoBase(hInstance),
 m_pVertexShader(0),
@@ -48,6 +50,7 @@ m_pVertexBuffer(0),
 m_pIndexBuffer(0),
 m_pTextureSRV(0),
 m_pNormalMapSRV(0),
+m_pDepthSRV(0),
 m_pSampleLinear(0),
 numVertex(0), 
 mTheta(-0.5f*MathHelper::Pi), 
@@ -95,7 +98,7 @@ DemoApp::~DemoApp()
 	InputLayouts::DestroyAll();
 	RenderStates::DestroyAll();
 }
-
+ 
 void DemoApp::OnResize()
 {
 	DemoBase::OnResize();
@@ -234,7 +237,9 @@ void DemoApp::CreateSamplerStates()
 	desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	desc.MinLOD = 0;
 	desc.MaxLOD = D3D11_FLOAT32_MAX;
-	HR(md3dDevice->CreateSamplerState(&desc, &m_pSampleLinear))
+	HR(md3dDevice->CreateSamplerState(&desc, &m_pSampleLinear));
+
+	
 }
 
 void DemoApp::SetUpSceneConsts()
@@ -243,7 +248,7 @@ void DemoApp::SetUpSceneConsts()
 	CBNeverChanges cbNeverChanges;
 	cbNeverChanges.dirLight = mDirLight;
 	cbNeverChanges.pointLight = mPointLight;
-
+	cbNeverChanges.shadowMapSize = static_cast<float>(mShadowMapSize);
 	md3dImmediateContext->UpdateSubresource(m_pCBNeverChanges, 0, NULL, &cbNeverChanges, 0, 0);
 
 	m_Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, mClientWidth / (float)mClientHeight, 0.01f, 100.0f);
@@ -342,6 +347,7 @@ void DemoApp::UpdateScene(float dt)
 	//Update Per Frame Constant Buffer
 	CBPerFrame cbPerFrame;
 	cbPerFrame.eyePos = XMFLOAT3(x, y, z);
+	cbPerFrame.matLightVPT = XMMatrixTranspose(mLightVPT);
 	md3dImmediateContext->UpdateSubresource(m_pCBPerFrame, 0, NULL, &cbPerFrame, 0, 0);
 
 	float t = mTimer.TotalTime();
@@ -363,6 +369,7 @@ void DemoApp::DrawScene()
 	//Render shadow map
 	m_pShadowMap->BindShadowMapDSV(md3dImmediateContext);
 	RenderShadowMap();
+	m_pDepthSRV = m_pShadowMap->DepthShaderResourceView();
 
 	//Restore render targets
 	md3dImmediateContext->RSSetState(0);
@@ -398,22 +405,23 @@ void DemoApp::DrawScene()
 
 	//Set Shaders and Resources
 	md3dImmediateContext->VSSetShader(m_pVertexShader, NULL, 0);
-	//md3dImmediateContext->VSSetConstantBuffers(0, 1, &m_pCBNeverChanges);
-	//md3dImmediateContext->PSSetConstantBuffers(1, 1, &m_pCBOnResize);
-	//md3dImmediateContext->VSSetConstantBuffers(2, 1, &m_pCBPerFrame);
+	md3dImmediateContext->VSSetConstantBuffers(0, 1, &m_pCBNeverChanges);
+	md3dImmediateContext->VSSetConstantBuffers(1, 1, &m_pCBOnResize);
+	md3dImmediateContext->VSSetConstantBuffers(2, 1, &m_pCBPerFrame);
 	md3dImmediateContext->VSSetConstantBuffers(3, 1, &m_pCBPerObject);
 
 	md3dImmediateContext->PSSetShader(m_pPixelShader, NULL, 0);
 	md3dImmediateContext->PSSetConstantBuffers(0, 1, &m_pCBNeverChanges);
-	//md3dImmediateContext->PSSetConstantBuffers(1, 1, &m_pCBOnResize);
+	md3dImmediateContext->PSSetConstantBuffers(1, 1, &m_pCBOnResize);
 	md3dImmediateContext->PSSetConstantBuffers(2, 1, &m_pCBPerFrame);
 	md3dImmediateContext->PSSetConstantBuffers(3, 1, &m_pCBPerObject);
+
 	md3dImmediateContext->PSSetShaderResources(0, 1, &m_pTextureSRV);
 	md3dImmediateContext->PSSetShaderResources(1, 1, &m_pNormalMapSRV);
+	md3dImmediateContext->PSSetShaderResources(2, 1, &m_pDepthSRV);
 	md3dImmediateContext->PSSetSamplers(0, 1, &m_pSampleLinear);
 
 	md3dImmediateContext->Draw(numVertex, 0);
-	//md3dImmediateContext->DrawIndexed(numTriangle*3,0,0);
 	HR(mSwapChain->Present(0, 0));
 }
 
