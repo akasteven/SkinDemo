@@ -28,7 +28,6 @@ struct PS_INPUT
 	float2 Tex : TEXCOORD;
 };
 
-
 PS_INPUT VS(VS_INPUT input)
 {
 	PS_INPUT output = (PS_INPUT)0;

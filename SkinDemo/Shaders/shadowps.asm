@@ -40,7 +40,7 @@ dcl_temps 1
 //   v0.x <- input.PosH.x; v0.y <- input.PosH.y; v0.z <- input.PosH.z; v0.w <- input.PosH.w; 
 //   v1.x <- input.Tex.x; v1.y <- input.Tex.y
 //
-#line 42 "D:\Projects\Demo\Demo\SkinDemo\Shaders\ShadowMap.hlsl"
+#line 41 "D:\Projects\Demo\Demo\SkinDemo\Shaders\ShadowMap.hlsl"
 sample_indexable(texture2d)(float,float,float,float) r0.x, v1.xyxx, t0.wxyz, s0
 mov r0.x, r0.x  // r0.x <- diffuse.w
 mov r0.y, l(-0.100000)

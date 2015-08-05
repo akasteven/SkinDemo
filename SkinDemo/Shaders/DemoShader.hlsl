@@ -70,7 +70,7 @@ float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, floa
 	return bumpedNormalW;
 }
 
-float CalcShadowFactor(SamplerComparisonState samShadow,
+float ShadowFactorPCF(SamplerComparisonState samShadow,
 	Texture2D shadowMap,
 	float4 shadowPosH)
 {
@@ -97,10 +97,24 @@ float CalcShadowFactor(SamplerComparisonState samShadow,
 		percentLit += shadowMap.SampleCmpLevelZero(samShadow,
 			shadowPosH.xy + offsets[i], depth).r;
 	}
-	
-	
-	//return percentLit = shadowMap.SampleCmpLevelZero(samShadow, shadowPosH.xy , depth).r;
+
 	return percentLit /= 9.0f;
+}
+
+float ShadowFactor(SamplerComparisonState samShadow,
+	Texture2D shadowMap,
+	float4 shadowPosH)
+{
+	// Complete projection by doing division by w.
+	shadowPosH.xyz /= shadowPosH.w;
+
+	// Depth in NDC space.
+	float depth = shadowPosH.z;
+
+	float percentLit = shadowMap.SampleCmpLevelZero(samShadow,
+			shadowPosH.xy, depth).r;
+
+	return percentLit;
 }
 
 
@@ -128,7 +142,7 @@ float4 PS( PS_INPUT input) : SV_Target
 
 	float3 normalMapSample = txNormal.Sample(samLinear, input.Tex).rgb;
 	float3 bumpedNormal = NormalSampleToWorldSpace(normalMapSample, input.NorW, input.TangentW);
-	float PCF = CalcShadowFactor(samShadowMap, txShadowMap, input.ShadowH);
+	float PCF = ShadowFactorPCF(samShadowMap, txShadowMap, input.ShadowH);
 
 	float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);

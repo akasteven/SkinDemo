@@ -37,7 +37,6 @@ struct CBPerObjectShadow
 	XMMATRIX lightWVP;
 };
 
-
 struct CBPerFrameScreenQuad
 {
 	XMMATRIX wvp;
