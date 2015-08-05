@@ -138,8 +138,8 @@ float4 PS( PS_INPUT input) : SV_Target
 	ComputeDirectionalLight(material, DirLight, bumpedNormal, toEye, A, D, S);
 
 	ambient += A;
-	diffuse += D;//*PCF;
-	specular += S;// *PCF;
+	diffuse += D * PCF;
+	specular += S * PCF;
 
 	ComputePointLight(material, PLight, input.PosW, bumpedNormal, toEye, A, D, S);
 
@@ -149,9 +149,7 @@ float4 PS( PS_INPUT input) : SV_Target
 
 	float4 litColor = texColor * (ambient + diffuse) + specular;
 	litColor.a = texColor.a;
-	
-	//return txShadowMap.Sample(samLinear, input.Tex);
-	//return float4(PCF, PCF, PCF, 1.0f);
+
 	return litColor;
 }
 

@@ -71,7 +71,7 @@ mTheta(-0.5f*MathHelper::Pi),
 mPhi(0.5f*MathHelper::Pi), 
 mRadius(40.0f),
 m_pShadowMap(0),
-mShadowMapSize(4096),
+mShadowMapSize(2048),
 m_pAABB(0)
 {
 	this->mMainWndCaption = L"Demo";
