@@ -4,15 +4,6 @@
 //
 // Buffer Definitions: 
 //
-// cbuffer cbPerFrame
-// {
-//
-//   float3 eyePos;                     // Offset:    0 Size:    12 [unused]
-//   float pad;                         // Offset:   12 Size:     4 [unused]
-//   float4x4 lightVPT;                 // Offset:   16 Size:    64
-//
-// }
-//
 // cbuffer cbPerObject
 // {
 //
@@ -29,6 +20,7 @@
 //       float4 Reflect;                // Offset:  240
 //
 //   } material;                        // Offset:  192 Size:    64 [unused]
+//   float4x4 lightWVPT;                // Offset:  256 Size:    64
 //
 // }
 //
@@ -37,7 +29,6 @@
 //
 // Name                                 Type  Format         Dim Slot Elements
 // ------------------------------ ---------- ------- ----------- ---- --------
-// cbPerFrame                        cbuffer      NA          NA    2        1
 // cbPerObject                       cbuffer      NA          NA    3        1
 //
 //
@@ -65,8 +56,7 @@
 //
 vs_5_0
 dcl_globalFlags refactoringAllowed | skipOptimization
-dcl_constantbuffer cb2[5], immediateIndexed
-dcl_constantbuffer cb3[12], immediateIndexed
+dcl_constantbuffer cb3[20], immediateIndexed
 dcl_input v0.xyz
 dcl_input v1.xyz
 dcl_input v2.xy
@@ -77,7 +67,7 @@ dcl_output o2.xyz
 dcl_output o3.xyz
 dcl_output o4.xy
 dcl_output o5.xyzw
-dcl_temps 6
+dcl_temps 7
 //
 // Initial variable locations:
 //   v0.x <- input.PosL.x; v0.y <- input.PosL.y; v0.z <- input.PosL.z; 
@@ -91,7 +81,7 @@ dcl_temps 6
 //   o1.x <- <VS return value>.PosW.x; o1.y <- <VS return value>.PosW.y; o1.z <- <VS return value>.PosW.z; 
 //   o0.x <- <VS return value>.PosH.x; o0.y <- <VS return value>.PosH.y; o0.z <- <VS return value>.PosH.z; o0.w <- <VS return value>.PosH.w
 //
-#line 120 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
+#line 121 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
 mov r0.xyz, v0.xyzx
 mov r0.w, l(1.000000)
 dp4 r1.x, r0.xyzw, cb3[0].xyzw  // r1.x <- output.PosW.x
@@ -107,17 +97,16 @@ dp4 r4.x, r0.xyzw, cb3[8].xyzw  // r4.x <- output.PosH.x
 dp4 r4.y, r0.xyzw, cb3[9].xyzw  // r4.y <- output.PosH.y
 dp4 r4.z, r0.xyzw, cb3[10].xyzw  // r4.z <- output.PosH.z
 dp4 r4.w, r0.xyzw, cb3[11].xyzw  // r4.w <- output.PosH.w
-mov r0.xy, v2.xyxx  // r0.x <- output.Tex.x; r0.y <- output.Tex.y
-mov r1.w, l(1.000000)
-dp4 r5.x, r1.xyzw, cb2[1].xyzw  // r5.x <- output.ShadowH.x
-dp4 r5.y, r1.xyzw, cb2[2].xyzw  // r5.y <- output.ShadowH.y
-dp4 r5.z, r1.xyzw, cb2[3].xyzw  // r5.z <- output.ShadowH.z
-dp4 r5.w, r1.xyzw, cb2[4].xyzw  // r5.w <- output.ShadowH.w
+mov r5.xy, v2.xyxx  // r5.x <- output.Tex.x; r5.y <- output.Tex.y
+dp4 r6.x, r0.xyzw, cb3[16].xyzw  // r6.x <- output.ShadowH.x
+dp4 r6.y, r0.xyzw, cb3[17].xyzw  // r6.y <- output.ShadowH.y
+dp4 r6.z, r0.xyzw, cb3[18].xyzw  // r6.z <- output.ShadowH.z
+dp4 r6.w, r0.xyzw, cb3[19].xyzw  // r6.w <- output.ShadowH.w
 mov o0.xyzw, r4.xyzw
-mov o5.xyzw, r5.xyzw
+mov o5.xyzw, r6.xyzw
 mov o1.xyz, r1.xyzx
 mov o2.xyz, r2.xyzx
 mov o3.xyz, r3.xyzx
-mov o4.xy, r0.xyxx
+mov o4.xy, r5.xyxx
 ret 
-// Approximately 28 instruction slots used
+// Approximately 27 instruction slots used

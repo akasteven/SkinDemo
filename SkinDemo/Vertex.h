@@ -26,7 +26,7 @@ namespace Vertex
 	public:
 		VertexBase():Pos(0.0f, 0.0f, 0.0f){}
 		VertexBase(const XMFLOAT3& p) :Pos(p){}
-		VertexBase(float px, float py, float pz) :Pos(0.0f, 0.0f, 0.0f){}
+		VertexBase(float px, float py, float pz) :Pos(px, py, pz){}
 		XMFLOAT3 Pos;
 	};
 

@@ -21,7 +21,6 @@ struct CBPerFrame
 {
 	XMFLOAT3 eyePos;
 	float pad;
-	XMMATRIX matLightVPT;
 };
 
 struct CBPerObject
@@ -30,6 +29,7 @@ struct CBPerObject
 	XMMATRIX matWorldInvTranspose;
 	XMMATRIX matWVP;
 	Material material;
+	XMMATRIX matLightWVPT;
 };
 
 struct CBPerObjectShadow
@@ -37,17 +37,30 @@ struct CBPerObjectShadow
 	XMMATRIX lightWVP;
 };
 
+
+struct CBScreenQuadPerFrame
+{
+	XMMATRIX wvp;
+};
+
 DemoApp::DemoApp(HINSTANCE hInstance)
 :DemoBase(hInstance),
 m_pVertexShader(0),
 m_pPixelShader(0),
+m_pShadowMapVS(0),
+m_pShadowMapPS(0),
+m_pDebugTextureVS(0),
+m_pDebugTexturePS(0),
 m_pCBNeverChanges(0),
 m_pCBOnResize(0),
 m_pCBPerFrame(0),
 m_pCBPerObject(0),
 m_pCBPerObjShadow(0),
+m_pCBPerFrameScreenQuad(0),
 m_pVertexBuffer(0),
 m_pIndexBuffer(0),
+m_pScreenQuadVB(0),
+m_pScreenQuadIB(0),
 m_pTextureSRV(0),
 m_pNormalMapSRV(0),
 m_pDepthSRV(0),
@@ -82,11 +95,14 @@ DemoApp::~DemoApp()
 	md3dImmediateContext->ClearState();
 	ReleaseCOM(m_pVertexBuffer);
 	ReleaseCOM(m_pIndexBuffer);
+	ReleaseCOM(m_pScreenQuadVB);
+	ReleaseCOM(m_pScreenQuadIB);
 	ReleaseCOM(m_pCBNeverChanges);
 	ReleaseCOM(m_pCBOnResize);
 	ReleaseCOM(m_pCBPerFrame);
 	ReleaseCOM(m_pCBPerObject);
 	ReleaseCOM(m_pCBPerObjShadow);
+	ReleaseCOM(m_pCBPerFrameScreenQuad);
 	ReleaseCOM(m_pTextureSRV);
 	ReleaseCOM(m_pNormalMapSRV);
 	ReleaseCOM(m_pSampleLinear);
@@ -94,7 +110,8 @@ DemoApp::~DemoApp()
 	ReleaseCOM(m_pPixelShader);
 	ReleaseCOM(m_pShadowMapVS);
 	ReleaseCOM(m_pShadowMapPS);
-
+	ReleaseCOM(m_pDebugTextureVS);
+	ReleaseCOM(m_pDebugTexturePS);
 	InputLayouts::DestroyAll();
 	RenderStates::DestroyAll();
 }
@@ -178,6 +195,12 @@ void DemoApp::CreateShaders()
 	HR(LoadShaderBinaryFromFile("Shaders//shadowvs.fxo", &pShadowVSBlob));
 	HR(md3dDevice->CreateVertexShader(pShadowVSBlob->GetBufferPointer(), pShadowVSBlob->GetBufferSize(), NULL, &m_pShadowMapVS));
 
+	//Screen Quad VS
+	ID3DBlob *pDebugTextureVSBlob = NULL;
+	HR(LoadShaderBinaryFromFile("Shaders//debugtexturevs.fxo", &pDebugTextureVSBlob));
+	HR(md3dDevice->CreateVertexShader(pDebugTextureVSBlob->GetBufferPointer(), pDebugTextureVSBlob->GetBufferSize(), NULL, &m_pDebugTextureVS));
+	InputLayouts::InitLayout(md3dDevice, pDebugTextureVSBlob, Vertex::POSNORTEX);
+
 	//Default PS
 	ID3DBlob *pPSBlob = NULL;
 	HR(LoadShaderBinaryFromFile("Shaders//ps.fxo", &pPSBlob));
@@ -188,15 +211,83 @@ void DemoApp::CreateShaders()
 	HR(LoadShaderBinaryFromFile("Shaders//shadowps.fxo", &pShadowPSBlob));
 	HR(md3dDevice->CreatePixelShader(pShadowPSBlob->GetBufferPointer(), pShadowPSBlob->GetBufferSize(), NULL, &m_pShadowMapPS));
 
+	//Screen Quad PS
+	ID3DBlob *pDebugTexturePSBlob = NULL;
+	HR(LoadShaderBinaryFromFile("Shaders//debugtextureps.fxo", &pDebugTexturePSBlob));
+	HR(md3dDevice->CreatePixelShader(pDebugTexturePSBlob->GetBufferPointer(), pDebugTexturePSBlob->GetBufferSize(), NULL, &m_pDebugTexturePS));
+
+
 	ReleaseCOM(pVSBlob);
 	ReleaseCOM(pPSBlob);
 	ReleaseCOM(pShadowVSBlob);
 	ReleaseCOM(pShadowPSBlob);
+	ReleaseCOM(pDebugTextureVSBlob);
+	ReleaseCOM(pDebugTexturePSBlob);
+}
+
+void DemoApp::CreateScreenQuad()
+{
+	Vertex::VertexPNT vertex[4];
+
+	vertex[0] = Vertex::VertexPNT(
+		-1.0f, -1.0f, 0.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 1.0f);
+
+	vertex[1] = Vertex::VertexPNT(
+		-1.0f, +1.0f, 0.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f);
+
+	vertex[2] = Vertex::VertexPNT(
+		+1.0f, +1.0f, 0.0f,
+		0.0f, 0.0f, -1.0f,
+		1.0f, 0.0f);
+
+	vertex[3] = Vertex::VertexPNT(
+		+1.0f, -1.0f, 0.0f,
+		0.0f, 0.0f, -1.0f,
+		1.0f, 1.0f);
+
+
+	DWORD index[6] = 
+	{
+		0, 1, 2, 0, 2, 3
+	};
+
+	D3D11_BUFFER_DESC vertexBufferDesc;
+	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	vertexBufferDesc.ByteWidth = sizeof(Vertex::VertexPNT)* 4;
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.CPUAccessFlags = 0;
+	vertexBufferDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA vertexBufferData;
+	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+	vertexBufferData.pSysMem = &vertex[0];
+	HR(md3dDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_pScreenQuadVB));
+
+
+	D3D11_BUFFER_DESC indexBufferDesc;
+	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(DWORD)* 6;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA iinitData;
+	iinitData.pSysMem = &index[0];
+	HR(md3dDevice->CreateBuffer(&indexBufferDesc, &iinitData, &m_pScreenQuadIB));
+
 }
 
 void DemoApp::CreateGeometry()
 {
 	LoadModel("..//Resources//Perry.objx", &m_pVertexBuffer, &m_pIndexBuffer, md3dDevice, m_pAABB, numVertex, numTriangle);
+	CreateScreenQuad();
 }
 
 void DemoApp::CreateContantBuffers()
@@ -221,6 +312,9 @@ void DemoApp::CreateContantBuffers()
 
 	desc.ByteWidth = sizeof(CBPerObjectShadow);
 	HR(md3dDevice->CreateBuffer(&desc, 0, &m_pCBPerObjShadow));
+
+	desc.ByteWidth = sizeof(CBScreenQuadPerFrame);
+	HR(md3dDevice->CreateBuffer(&desc, 0, &m_pCBPerFrameScreenQuad));
 }
 
 void DemoApp::CreateSamplerStates()
@@ -259,6 +353,37 @@ void DemoApp::SetUpSceneConsts()
 void DemoApp::CreateRenderStates()
 {
 	RenderStates::InitAll(md3dDevice);
+}
+
+void DemoApp::RenderMiniWindow()
+{
+	//Set Buffers, Layout, Topology and Render States
+	UINT stride = sizeof(Vertex::VertexPNT);
+	UINT offset = 0;
+	md3dImmediateContext->IASetVertexBuffers(0, 1, &m_pScreenQuadVB, &stride, &offset);
+	md3dImmediateContext->IASetIndexBuffer(m_pScreenQuadIB, DXGI_FORMAT_R32_UINT, 0);
+	md3dImmediateContext->IASetInputLayout(InputLayouts::VertexPNT);
+	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	md3dImmediateContext->RSSetState(RenderStates::NoCullRS);
+
+	XMMATRIX scale = XMMatrixScaling(1.0f / AspectRatio(), 1.0f, 1.0f);
+	XMMATRIX world = XMMATRIX(
+		0.25f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.25f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.25 / AspectRatio() - 1, 0.75f, 0.0f, 1.0f);
+
+	CBScreenQuadPerFrame cbScreenQuadPerFrame;
+	cbScreenQuadPerFrame.wvp = XMMatrixTranspose( scale * world );
+	md3dImmediateContext->UpdateSubresource(m_pCBPerFrameScreenQuad, 0, NULL, &cbScreenQuadPerFrame, 0, 0);
+
+	md3dImmediateContext->VSSetShader(m_pDebugTextureVS, NULL, 0);
+	md3dImmediateContext->VSSetConstantBuffers(0, 1, &m_pCBPerFrameScreenQuad);
+
+	md3dImmediateContext->PSSetShader(m_pDebugTexturePS, NULL, 0);
+	md3dImmediateContext->PSSetShaderResources(0, 1, &m_pDepthSRV);
+	md3dImmediateContext->PSSetSamplers(0, 1, &m_pSampleLinear);
+	md3dImmediateContext->DrawIndexed(6, 0, 0);
 }
 
 void DemoApp::BuildShadowMapMatrices()
@@ -347,7 +472,6 @@ void DemoApp::UpdateScene(float dt)
 	//Update Per Frame Constant Buffer
 	CBPerFrame cbPerFrame;
 	cbPerFrame.eyePos = XMFLOAT3(x, y, z);
-	cbPerFrame.matLightVPT = XMMatrixTranspose(mLightVPT);
 	md3dImmediateContext->UpdateSubresource(m_pCBPerFrame, 0, NULL, &cbPerFrame, 0, 0);
 
 	float t = mTimer.TotalTime();
@@ -379,8 +503,10 @@ void DemoApp::DrawScene()
 
 	//Clear Render Targets
 	float clearColor[4] = { 199.0f / 255.0f, 197.0f / 255.0f, 206.0f / 255.0f, 1.0f };
+	//float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, clearColor);
 	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
 
 	//Set Buffers, Layout, Topology and Render States
 	UINT stride = sizeof(Vertex::VertexPNTTan);
@@ -397,6 +523,7 @@ void DemoApp::DrawScene()
 	cbPerObj.matWorld = XMMatrixTranspose(m_World);
 	cbPerObj.matWorldInvTranspose = XMMatrixTranspose(MathHelper::InverseTranspose(m_World));
 	cbPerObj.matWVP = XMMatrixTranspose(m_World * m_View * m_Proj);
+	cbPerObj.matLightWVPT = XMMatrixTranspose(m_World * mLightVPT);
 	cbPerObj.material.Ambient = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	cbPerObj.material.Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
 	cbPerObj.material.Specular = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
@@ -422,7 +549,14 @@ void DemoApp::DrawScene()
 	md3dImmediateContext->PSSetSamplers(0, 1, &m_pSampleLinear);
 
 	md3dImmediateContext->Draw(numVertex, 0);
+
+	//Render mini window displaying shadow map
+	RenderMiniWindow();
+
 	HR(mSwapChain->Present(0, 0));
+
+
+
 }
 
 

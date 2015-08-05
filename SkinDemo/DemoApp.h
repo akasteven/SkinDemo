@@ -25,6 +25,7 @@ private:
 
 	//Common setups
 	void CreateGeometry();
+	void CreateScreenQuad();
 	void CreateShaders();
 	void CreateContantBuffers();
 	void CreateRenderStates();
@@ -36,12 +37,17 @@ private:
 	void RenderShadowMap();
 	void BuildShadowMapMatrices();
 
+	//Screen debug mini window
+	void RenderMiniWindow();
+
 private:
 
 	ID3D11VertexShader * m_pVertexShader;
 	ID3D11PixelShader * m_pPixelShader;
 	ID3D11VertexShader * m_pShadowMapVS;
 	ID3D11PixelShader * m_pShadowMapPS;
+	ID3D11VertexShader * m_pDebugTextureVS;
+	ID3D11PixelShader * m_pDebugTexturePS;
 
 
 	ID3D11Buffer * m_pCBNeverChanges;
@@ -49,6 +55,11 @@ private:
 	ID3D11Buffer * m_pCBPerFrame;
 	ID3D11Buffer * m_pCBPerObject;
 	ID3D11Buffer * m_pCBPerObjShadow;
+	ID3D11Buffer * m_pCBPerFrameScreenQuad;
+
+	ID3D11Buffer* m_pScreenQuadVB;
+	ID3D11Buffer* m_pScreenQuadIB;
+
 
 	ID3D11Buffer * m_pVertexBuffer;
 	ID3D11Buffer * m_pIndexBuffer;

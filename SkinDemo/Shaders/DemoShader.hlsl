@@ -35,7 +35,6 @@ cbuffer cbPerFrame : register( b2 )
 {
 	float3 eyePos;
 	float pad;
-	float4x4 lightVPT;
 };
 
 cbuffer cbPerObject: register( b3 )
@@ -44,6 +43,7 @@ cbuffer cbPerObject: register( b3 )
     float4x4 matWorldInvTranspose;
     float4x4 matWVP;
 	Material material;	
+	float4x4 lightWVPT;
 };
 
 struct VS_INPUT
@@ -107,9 +107,10 @@ float CalcShadowFactor(SamplerComparisonState samShadow,
 		percentLit += shadowMap.SampleCmpLevelZero(samShadow,
 			shadowPosH.xy + offsets[i], depth).r;
 	}
-
-	return percentLit = shadowMap.SampleCmpLevelZero(samShadow, shadowPosH.xy , depth).r;
-	//return percentLit /= 9.0f;
+	
+	
+	//return percentLit = shadowMap.SampleCmpLevelZero(samShadow, shadowPosH.xy , depth).r;
+	return percentLit /= 9.0f;
 }
 
 
@@ -122,7 +123,7 @@ PS_INPUT VS( VS_INPUT input )
 	output.TangentW = mul(input.TangentL, (float3x3)matWorld);
 	output.PosH = mul(float4(input.PosL, 1.0f), matWVP);
 	output.Tex = input.Tex; 
-	output.ShadowH = mul(float4(output.PosW, 1.0f), lightVPT);
+	output.ShadowH = mul(float4(input.PosL, 1.0f), lightWVPT);
     return output;
 }
 
@@ -160,7 +161,7 @@ float4 PS( PS_INPUT input) : SV_Target
 	litColor.a = texColor.a;
 	
 	//return txShadowMap.Sample(samLinear, input.Tex);
-	return float4(PCF, 0.0f, 0.0f, 1.0f);
+	//return float4(PCF, PCF, PCF, 1.0f);
 	return litColor;
 }
 
