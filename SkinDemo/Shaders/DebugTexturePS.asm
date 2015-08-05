@@ -53,8 +53,6 @@ dcl_temps 1
 #line 36 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DebugTexture.hlsl"
 sample_indexable(texture2d)(float,float,float,float) r0.x, v1.xyxx, t0.xyzw, s0
 mov r0.xyz, r0.xxxx  // r0.z <- c.x
-
-#line 40
 itof o0.w, l(1)
 mov o0.xyz, r0.xyzx
 ret 

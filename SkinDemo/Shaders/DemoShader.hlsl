@@ -6,17 +6,7 @@ Texture2D txNormal : register(t1);
 Texture2D txShadowMap : register(t2);
 
 SamplerState samLinear : register( s0 );
-
-SamplerComparisonState samShadow
-{
-	Filter = COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-	AddressU = BORDER;
-	AddressV = BORDER;
-	AddressW = BORDER;
-	BorderColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
-	ComparisonFunc = LESS_EQUAL;
-};
+SamplerComparisonState samShadowMap : register(s1);
 
 
 cbuffer cbNeverChanges : register( b0 )
@@ -138,7 +128,7 @@ float4 PS( PS_INPUT input) : SV_Target
 
 	float3 normalMapSample = txNormal.Sample(samLinear, input.Tex).rgb;
 	float3 bumpedNormal = NormalSampleToWorldSpace(normalMapSample, input.NorW, input.TangentW);
-	float PCF = CalcShadowFactor(samShadow, txShadowMap, input.ShadowH);
+	float PCF = CalcShadowFactor(samShadowMap, txShadowMap, input.ShadowH);
 
 	float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -148,8 +138,8 @@ float4 PS( PS_INPUT input) : SV_Target
 	ComputeDirectionalLight(material, DirLight, bumpedNormal, toEye, A, D, S);
 
 	ambient += A;
-	diffuse += D *PCF;
-	specular += S * PCF;
+	diffuse += D;//*PCF;
+	specular += S;// *PCF;
 
 	ComputePointLight(material, PLight, input.PosW, bumpedNormal, toEye, A, D, S);
 

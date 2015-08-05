@@ -38,7 +38,7 @@ struct CBPerObjectShadow
 };
 
 
-struct CBScreenQuadPerFrame
+struct CBPerFrameScreenQuad
 {
 	XMMATRIX wvp;
 };
@@ -65,6 +65,7 @@ m_pTextureSRV(0),
 m_pNormalMapSRV(0),
 m_pDepthSRV(0),
 m_pSampleLinear(0),
+m_pSampleShadowMap(0),
 numVertex(0), 
 mTheta(-0.5f*MathHelper::Pi), 
 mPhi(0.5f*MathHelper::Pi), 
@@ -106,6 +107,7 @@ DemoApp::~DemoApp()
 	ReleaseCOM(m_pTextureSRV);
 	ReleaseCOM(m_pNormalMapSRV);
 	ReleaseCOM(m_pSampleLinear);
+	ReleaseCOM(m_pSampleShadowMap);
 	ReleaseCOM(m_pVertexShader);
 	ReleaseCOM(m_pPixelShader);
 	ReleaseCOM(m_pShadowMapVS);
@@ -172,7 +174,7 @@ void DemoApp::CreateLights()
 	mDirLight.Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	mDirLight.Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
 	mDirLight.Specular = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-	mDirLight.Direction = XMFLOAT3(1.0f, 0.0f, 1.0f);
+	mDirLight.Direction = XMFLOAT3(1.0f, -0.5f, 0.5f);
 
 	mPointLight.Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	mPointLight.Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
@@ -313,7 +315,7 @@ void DemoApp::CreateContantBuffers()
 	desc.ByteWidth = sizeof(CBPerObjectShadow);
 	HR(md3dDevice->CreateBuffer(&desc, 0, &m_pCBPerObjShadow));
 
-	desc.ByteWidth = sizeof(CBScreenQuadPerFrame);
+	desc.ByteWidth = sizeof(CBPerFrameScreenQuad);
 	HR(md3dDevice->CreateBuffer(&desc, 0, &m_pCBPerFrameScreenQuad));
 }
 
@@ -333,7 +335,13 @@ void DemoApp::CreateSamplerStates()
 	desc.MaxLOD = D3D11_FLOAT32_MAX;
 	HR(md3dDevice->CreateSamplerState(&desc, &m_pSampleLinear));
 
-	
+	ZeroMemory(&desc, sizeof(desc));
+	desc.Filter = D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+	desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	HR(md3dDevice->CreateSamplerState(&desc, &m_pSampleShadowMap));
 }
 
 void DemoApp::SetUpSceneConsts()
@@ -366,6 +374,7 @@ void DemoApp::RenderMiniWindow()
 	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	md3dImmediateContext->RSSetState(RenderStates::NoCullRS);
 
+	//Resize mini window and translate to upper left corner
 	XMMATRIX scale = XMMatrixScaling(1.0f / AspectRatio(), 1.0f, 1.0f);
 	XMMATRIX world = XMMATRIX(
 		0.25f, 0.0f, 0.0f, 0.0f,
@@ -373,7 +382,7 @@ void DemoApp::RenderMiniWindow()
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.25 / AspectRatio() - 1, 0.75f, 0.0f, 1.0f);
 
-	CBScreenQuadPerFrame cbScreenQuadPerFrame;
+	CBPerFrameScreenQuad cbScreenQuadPerFrame;
 	cbScreenQuadPerFrame.wvp = XMMatrixTranspose( scale * world );
 	md3dImmediateContext->UpdateSubresource(m_pCBPerFrameScreenQuad, 0, NULL, &cbScreenQuadPerFrame, 0, 0);
 
@@ -547,6 +556,7 @@ void DemoApp::DrawScene()
 	md3dImmediateContext->PSSetShaderResources(1, 1, &m_pNormalMapSRV);
 	md3dImmediateContext->PSSetShaderResources(2, 1, &m_pDepthSRV);
 	md3dImmediateContext->PSSetSamplers(0, 1, &m_pSampleLinear);
+	md3dImmediateContext->PSSetSamplers(1, 1, &m_pSampleShadowMap);
 
 	md3dImmediateContext->Draw(numVertex, 0);
 

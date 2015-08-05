@@ -30,7 +30,7 @@
 //       float pad;                     // Offset:  140
 //
 //   } PLight;                          // Offset:   64 Size:    80
-//   float ShadowMapSize;               // Offset:  144 Size:     4
+//   float ShadowMapSize;               // Offset:  144 Size:     4 [unused]
 //   float3 pad3;                       // Offset:  148 Size:    12 [unused]
 //
 // }
@@ -69,10 +69,8 @@
 // Name                                 Type  Format         Dim Slot Elements
 // ------------------------------ ---------- ------- ----------- ---- --------
 // samLinear                         sampler      NA          NA    0        1
-// samShadow                       sampler_c      NA          NA    1        1
 // txDiffuse                         texture  float4          2d    0        1
 // txNormal                          texture  float4          2d    1        1
-// txShadowMap                       texture  float4          2d    2        1
 // cbNeverChanges                    cbuffer      NA          NA    0        1
 // cbPerFrame                        cbuffer      NA          NA    2        1
 // cbPerObject                       cbuffer      NA          NA    3        1
@@ -88,7 +86,7 @@
 // NORMAL                   0   xyz         2     NONE   float   xyz 
 // TANGENT                  0   xyz         3     NONE   float   xyz 
 // TEXCOORD                 0   xy          4     NONE   float   xy  
-// TEXCOORD                 1   xyzw        5     NONE   float   xyzw
+// TEXCOORD                 1   xyzw        5     NONE   float       
 //
 //
 // Output signature:
@@ -99,22 +97,18 @@
 //
 ps_5_0
 dcl_globalFlags refactoringAllowed | skipOptimization
-dcl_constantbuffer cb0[10], immediateIndexed
+dcl_constantbuffer cb0[9], immediateIndexed
 dcl_constantbuffer cb2[1], immediateIndexed
 dcl_constantbuffer cb3[15], immediateIndexed
 dcl_sampler s0, mode_default
-dcl_sampler s1, mode_comparison
 dcl_resource_texture2d (float,float,float,float) t0
 dcl_resource_texture2d (float,float,float,float) t1
-dcl_resource_texture2d (float,float,float,float) t2
 dcl_input_ps linear v1.xyz
 dcl_input_ps linear v2.xyz
 dcl_input_ps linear v3.xyz
 dcl_input_ps linear v4.xy
-dcl_input_ps linear v5.xyzw
 dcl_output o0.xyzw
 dcl_temps 18
-dcl_indexableTemp x0[9], 4
 //
 // Initial variable locations:
 //   v0.x <- input.PosH.x; v0.y <- input.PosH.y; v0.z <- input.PosH.z; v0.w <- input.PosH.w; 
@@ -125,7 +119,7 @@ dcl_indexableTemp x0[9], 4
 //   v5.x <- input.ShadowH.x; v5.y <- input.ShadowH.y; v5.z <- input.ShadowH.z; v5.w <- input.ShadowH.w; 
 //   o0.x <- <PS return value>.x; o0.y <- <PS return value>.y; o0.z <- <PS return value>.z; o0.w <- <PS return value>.w
 //
-#line 132 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
+#line 122 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
 dp3 r0.x, v2.xyzx, v2.xyzx
 rsq r0.x, r0.x
 mul r0.xyz, r0.xxxx, v2.xyzx  // r0.x <- input.NorW.x; r0.y <- input.NorW.y; r0.z <- input.NorW.z
@@ -142,7 +136,7 @@ mov r3.xyz, r3.xyzx
 mov r0.xyz, r0.xyzx
 mov r4.xyz, v3.yzxy
 
-#line 70
+#line 60
 mul r3.xyz, r3.xyzx, l(2.000000, 2.000000, 2.000000, 0.000000)
 mov r5.xyz, l(-1.000000,-1.000000,-1.000000,-0.000000)
 add r3.xyz, r3.xyzx, r5.xyzx  // r3.x <- normalT.x; r3.y <- normalT.y; r3.z <- normalT.z
@@ -175,93 +169,16 @@ rsq r0.x, r0.x
 mul r0.xyz, r0.xxxx, r4.xyzx  // r0.x <- bumpedNormalW.x; r0.y <- bumpedNormalW.y; r0.z <- bumpedNormalW.z
 mov r0.xyz, r0.xyzx  // r0.x <- <NormalSampleToWorldSpace return value>.x; r0.y <- <NormalSampleToWorldSpace return value>.y; r0.z <- <NormalSampleToWorldSpace return value>.z
 
-#line 140
+#line 130
 mov r0.xyz, r0.xyzx  // r0.x <- bumpedNormal.x; r0.y <- bumpedNormal.y; r0.z <- bumpedNormal.z
 nop 
 nop 
 nop 
-mov r3.xyzw, v5.xyzw
-
-#line 88
-div r3.xyz, r3.zxyz, r3.wwww  // r3.x <- shadowPosH.z; r3.y <- shadowPosH.x; r3.z <- shadowPosH.y
-
-#line 91
-mov r3.x, r3.x  // r3.x <- depth
-
-#line 94
-div r4.y, l(1.000000), cb0[9].x  // r4.y <- dx
-mov r0.w, l(0)  // r0.w <- percentLit
-mov r5.x, -r4.y
-mov r5.y, -r4.y
-mov r6.y, -r4.y
-mov r4.x, -r4.y
-mov r7.x, -r4.y
-mov r8.x, -r4.y
-mov r8.y, r4.y
-mov r4.w, r4.y
-mov x0[0].xy, r5.xyxx
-mov r6.x, l(0)
-mov x0[1].xy, r6.xyxx
-mov x0[2].xy, r4.yxyy
-mov r7.y, l(0)
-mov x0[3].xy, r7.xyxx
-mov x0[4].xy, l(0,0,0,0)
-mov r4.z, l(0)
-mov x0[5].xy, r4.yzyy
-mov x0[6].xy, r8.xyxx
-mov r4.x, l(0)
-mov x0[7].xy, r4.xyxx
-mov x0[8].xy, r4.ywyy
-
-#line 107
-mov r4.xy, x0[0].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[1].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[2].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[3].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[4].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[5].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[6].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[7].xyxx
-add r4.xy, r3.yzyy, r4.xyxx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r4.xyxx, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-mov r4.xy, x0[8].xyxx
-add r3.yz, r3.yyzy, r4.xxyx
-sample_c_lz_indexable(texture2d)(float,float,float,float) r1.w, r3.yzyy, t2.xxxx, s1, r3.x
-add r0.w, r0.w, r1.w
-
-#line 113
-div r0.w, r0.w, l(9.000000)
-mov r0.w, r0.w  // r0.w <- <CalcShadowFactor return value>
-
-#line 141
-mov r0.w, r0.w  // r0.w <- PCF
 mov r3.xyz, l(0,0,0,0)  // r3.x <- ambient.x; r3.y <- ambient.y; r3.z <- ambient.z
 mov r4.xyz, l(0,0,0,0)  // r4.x <- diffuse.x; r4.y <- diffuse.y; r4.z <- diffuse.z
 mov r5.xyz, l(0,0,0,0)  // r5.x <- specular.x; r5.y <- specular.y; r5.z <- specular.z
 
-#line 148
+#line 138
 nop 
 mov r6.xyz, cb3[12].xyzx
 mov r7.xyz, cb3[13].xyzx
@@ -284,37 +201,35 @@ mov r12.xyz, -r12.xyzx  // r12.x <- lightVec.x; r12.y <- lightVec.y; r12.z <- li
 mul r6.xyz, r6.xyzx, r9.xyzx  // r6.x <- ambient.x; r6.y <- ambient.y; r6.z <- ambient.z
 
 #line 29
-dp3 r1.w, r12.xyzx, r0.xyzx  // r1.w <- diffuseFactor
+dp3 r0.w, r12.xyzx, r0.xyzx  // r0.w <- diffuseFactor
 
 #line 33
-lt r3.w, l(0.000000), r1.w
+lt r1.w, l(0.000000), r0.w
 mov r9.xyz, -r12.xyzx
-dp3 r4.w, r9.xyzx, r0.xyzx
-add r4.w, r4.w, r4.w
-mov r4.w, -r4.w
-mul r12.xyz, r0.xyzx, r4.wwww
+dp3 r3.w, r9.xyzx, r0.xyzx
+add r3.w, r3.w, r3.w
+mov r3.w, -r3.w
+mul r12.xyz, r0.xyzx, r3.wwww
 add r9.xyz, r9.xyzx, r12.xyzx  // r9.x <- v.x; r9.y <- v.y; r9.z <- v.z
-dp3 r4.w, r9.xyzx, r1.xyzx
-max r4.w, r4.w, l(0.000000)
-log r4.w, r4.w
-mul r4.w, r4.w, r8.w
-exp r4.w, r4.w  // r4.w <- specFactor
-mul r7.xyz, r7.xyzx, r1.wwww
+dp3 r3.w, r9.xyzx, r1.xyzx
+max r3.w, r3.w, l(0.000000)
+log r3.w, r3.w
+mul r3.w, r3.w, r8.w
+exp r3.w, r3.w  // r3.w <- specFactor
+mul r7.xyz, r7.xyzx, r0.wwww
 mul r7.xyz, r10.xyzx, r7.xyzx  // r7.x <- diffuse.x; r7.y <- diffuse.y; r7.z <- diffuse.z
-mul r8.xyz, r8.xyzx, r4.wwww
+mul r8.xyz, r8.xyzx, r3.wwww
 mul r8.xyz, r11.xyzx, r8.xyzx  // r8.x <- spec.x; r8.y <- spec.y; r8.z <- spec.z
-movc r7.xyz, r3.wwww, r7.xyzx, r13.xyzx
-movc r8.xyz, r3.wwww, r8.xyzx, r14.xyzx
+movc r7.xyz, r1.wwww, r7.xyzx, r13.xyzx
+movc r8.xyz, r1.wwww, r8.xyzx, r14.xyzx
 
-#line 148 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
+#line 138 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
 mov r6.xyz, r6.xyzx  // r6.x <- A.x; r6.y <- A.y; r6.z <- A.z
 mov r7.xyz, r7.xyzx  // r7.x <- D.x; r7.y <- D.y; r7.z <- D.z
 mov r8.xyz, r8.xyzx  // r8.x <- S.x; r8.y <- S.y; r8.z <- S.z
 add r3.xyz, r3.xyzx, r6.xyzx
-mul r6.xyz, r0.wwww, r7.xyzx
-add r4.xyz, r4.xyzx, r6.xyzx
-mul r6.xyz, r0.wwww, r8.xyzx
-add r5.xyz, r5.xyzx, r6.xyzx
+add r4.xyz, r4.xyzx, r7.xyzx
+add r5.xyz, r5.xyzx, r8.xyzx
 nop 
 mov r6.xyz, cb3[12].xyzx
 mov r7.xyz, cb3[13].xyzx
@@ -384,7 +299,7 @@ if_z r0.w
   mul r17.xyz, r0.wwww, r1.xyzx  // r17.x <- spec.x; r17.y <- spec.y; r17.z <- spec.z
 endif 
 
-#line 154 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
+#line 144 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
 mov r15.xyz, r15.xyzx  // r15.x <- A.x; r15.y <- A.y; r15.z <- A.z
 mov r16.xyz, r16.xyzx  // r16.x <- D.x; r16.y <- D.y; r16.z <- D.z
 mov r17.xyz, r17.xyzx  // r17.x <- S.x; r17.y <- S.y; r17.z <- S.z
@@ -396,8 +311,8 @@ mul r0.xyz, r0.xyzx, r2.xyzx
 add r0.xyz, r3.xyzx, r0.xyzx  // r0.x <- litColor.x; r0.y <- litColor.y; r0.z <- litColor.z
 mov r2.w, r2.w  // r2.w <- litColor.w
 
-#line 165
+#line 155
 mov o0.xyz, r0.xyzx
 mov o0.w, r2.w
 ret 
-// Approximately 222 instruction slots used
+// Approximately 155 instruction slots used

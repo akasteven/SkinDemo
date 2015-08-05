@@ -67,12 +67,13 @@ private:
 	UINT numTriangle;
 
 	ID3D11ShaderResourceView * m_pTextureSRV;
-	ID3D11SamplerState * m_pSampleLinear;
 	ID3D11ShaderResourceView * m_pNormalMapSRV;
 	ID3D11ShaderResourceView * m_pDepthSRV;
+	ID3D11SamplerState * m_pSampleLinear;
+	ID3D11SamplerState * m_pSampleShadowMap;
 
 	ShadowMap *m_pShadowMap;
-	int  mShadowMapSize = 4096;
+	int  mShadowMapSize;
 	XMMATRIX mLightVPT;
 	XMMATRIX mLightView;
 	XMMATRIX mLightProj;
