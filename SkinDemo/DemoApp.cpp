@@ -398,7 +398,7 @@ void DemoApp::BuildShadowMapMatrices()
 {
 	float aabbRadius = m_pAABB->GetRadius();
 	XMVECTOR lightDir = XMLoadFloat3(&mDirLight.Direction);
-	XMVECTOR lightPos = -2.0f * lightDir * aabbRadius;
+	XMVECTOR lightPos = -1.2f * lightDir * aabbRadius;
 	XMVECTOR targetPos = XMLoadFloat3(&m_pAABB->Center);
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
