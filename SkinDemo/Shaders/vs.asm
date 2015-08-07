@@ -81,7 +81,7 @@ dcl_temps 7
 //   o1.x <- <VS return value>.PosW.x; o1.y <- <VS return value>.PosW.y; o1.z <- <VS return value>.PosW.z; 
 //   o0.x <- <VS return value>.PosH.x; o0.y <- <VS return value>.PosH.y; o0.z <- <VS return value>.PosH.z; o0.w <- <VS return value>.PosH.w
 //
-#line 125 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
+#line 124 "D:\Projects\Demo\Demo\SkinDemo\Shaders\DemoShader.hlsl"
 mov r0.xyz, v0.xyzx
 mov r0.w, l(1.000000)
 dp4 r1.x, r0.xyzw, cb3[0].xyzw  // r1.x <- output.PosW.x
